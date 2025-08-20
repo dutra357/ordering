@@ -1,29 +1,29 @@
 package com.dutra.ordering.domain.entity;
 
-import com.dutra.ordering.domain.utility.FieldsValidation;
-import org.apache.commons.validator.routines.EmailValidator;
+import com.dutra.ordering.domain.exceptions.CustomerArchivedException;
+import com.dutra.ordering.domain.valueobjects.*;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Objects;
-import java.util.UUID;
+
+import static com.dutra.ordering.domain.exceptions.ErrorMessages.ERROR_CUSTOMER_ARCHIVED;
 
 public class Customer {
 
-    private UUID id;
-    private String fullName;
-    private LocalDate birthDate;
-    private String email;
-    private String phone;
-    private String document;
+    private CustomerId id;
+    private FullName fullName;
+    private BirthDate birthDate;
+    private Email email;
+    private Phone phone;
+    private Document document;
     private Boolean promotionNotificationsAllowed;
     private Boolean archived;
     private OffsetDateTime registeredAt;
     private OffsetDateTime archivedAt;
-    private Integer loyaltyPoints;
+    private LoyaltyPoints loyaltyPoints;
 
-    public Customer(UUID id, String fullName, LocalDate birthDate,
-                    String email, String phone, String document,
+    public Customer(CustomerId id, FullName fullName, BirthDate birthDate,
+                    Email email, Phone phone, Document document,
                     Boolean promotionNotificationsAllowed, OffsetDateTime registeredAt) {
         this.setId(id);
         this.setFullName(fullName);
@@ -34,13 +34,13 @@ public class Customer {
         this.setPromotionNotificationsAllowed(promotionNotificationsAllowed);
         this.setRegisteredAt(registeredAt);
         this.setArchived(false);
-        this.setLoyaltyPoints(0);
+        this.setLoyaltyPoints(new LoyaltyPoints());
     }
 
-    public Customer(UUID id, String fullName, LocalDate birthDate,
-                    String email, String phone, String document,
+    public Customer(CustomerId id, FullName fullName, BirthDate birthDate,
+                    Email email, Phone phone, Document document,
                     Boolean promotionNotificationsAllowed, Boolean archived,
-                    OffsetDateTime registeredAt, OffsetDateTime archivedAt, Integer loyaltyPoints) {
+                    OffsetDateTime registeredAt, OffsetDateTime archivedAt, LoyaltyPoints loyaltyPoints) {
         this.setId(id);
         this.setFullName(fullName);
         this.setBirthDate(birthDate);
@@ -54,51 +54,70 @@ public class Customer {
         this.setLoyaltyPoints(loyaltyPoints);
     }
 
-    public void addLoialtyPoints(int loyaltyPoints) {}
+    public void addLoyaltyPoints(LoyaltyPoints loyaltyPoints) {
+        verifyIfChangeable();
+        this.setLoyaltyPoints(this.loyaltyPoints().add(loyaltyPoints));
+    }
 
-    public void archive() {}
+    public void archive() {
+        verifyIfChangeable();
+
+        this.setArchived(true);
+
+        this.setArchivedAt(OffsetDateTime.now());
+        this.setFullName(new FullName("Anonymous", "Name"));
+        this.setPhone(new Phone("xx-(xx)xxxxx-xxxx"));
+        this.setEmail(new Email("xxx@xxx.xxx"));
+        this.setDocument(new Document("xxx-xxx-xxxx"));
+        this.setBirthDate(null);
+    }
 
     public void eneablePromotionNotifications() {
+        verifyIfChangeable();
         this.setPromotionNotificationsAllowed(true);
     }
 
     public void diseablePromotionNotifications() {
+        verifyIfChangeable();
         this.setPromotionNotificationsAllowed(false);
     }
 
-    public void changeName(String fullName) {
+    public void changeName(FullName fullName) {
+        verifyIfChangeable();
         this.setFullName(fullName);
     }
 
-    public void changePhone(String phone) {
+    public void changePhone(Phone phone) {
+        verifyIfChangeable();
         this.setPhone(phone);
     }
 
-    public void changeEmail(String email) {
+    public void changeEmail(Email email) {
+        verifyIfChangeable();
         this.setEmail(email);
     }
 
-    public UUID id() {
+    public CustomerId id() {
         return id;
     }
 
-    public String fullName() {
+    public FullName fullName() {
         return fullName;
     }
 
-    public LocalDate birthDate() {
+    public BirthDate birthDate() {
         return birthDate;
     }
 
-    public String email() {
+    public Email email() {
         return email;
     }
 
-    public String phone() {
+    public Phone phone() {
         return phone;
     }
 
-    public String document() {
+    public Document document() {
         return document;
     }
 
@@ -106,7 +125,7 @@ public class Customer {
         return promotionNotificationsAllowed;
     }
 
-    public Boolean isArchived() {
+    public boolean isArchived() {
         return archived;
     }
 
@@ -118,51 +137,33 @@ public class Customer {
         return archivedAt;
     }
 
-    public Integer loyaltyPoints() {
+    public LoyaltyPoints loyaltyPoints() {
         return loyaltyPoints;
     }
 
-    private void setId(UUID id) {
+    private void setId(CustomerId id) {
         Objects.requireNonNull(id);
         this.id = id;
     }
 
-    private void setFullName(String fullName) {
+    private void setFullName(FullName fullName) {
         Objects.requireNonNull(fullName);
-
-        if (fullName.isBlank()) {
-            throw new IllegalArgumentException("Nome não pode ser nulo ou em branco.");
-        }
-
         this.fullName = fullName;
     }
 
-    private void setBirthDate(LocalDate birthDate) {
-        if (birthDate == null) {
-            this.birthDate = null;
-            return;
-        }
-
-        if (birthDate.isAfter(LocalDate.now())) {
-            throw new IllegalArgumentException("Data de nascimento não está no passado.");
-        }
-
+    private void setBirthDate(BirthDate birthDate) {
         this.birthDate = birthDate;
     }
 
-    private void setEmail(String email) {
-        Objects.requireNonNull(email);
-        FieldsValidation.requiresValidEmail(email);
+    private void setEmail(Email email) {
         this.email = email;
     }
 
-    private void setPhone(String phone) {
-        Objects.requireNonNull(phone);
+    private void setPhone(Phone phone) {
         this.phone = phone;
     }
 
-    private void setDocument(String document) {
-        Objects.requireNonNull(document);
+    private void setDocument(Document document) {
         this.document = document;
     }
 
@@ -185,9 +186,15 @@ public class Customer {
         this.archivedAt = archivedAt;
     }
 
-    private void setLoyaltyPoints(Integer loyaltyPoints) {
+    private void setLoyaltyPoints(LoyaltyPoints loyaltyPoints) {
         Objects.requireNonNull(loyaltyPoints);
         this.loyaltyPoints = loyaltyPoints;
+    }
+
+    private void verifyIfChangeable() {
+        if (this.isArchived()) {
+            throw new CustomerArchivedException(ERROR_CUSTOMER_ARCHIVED);
+        }
     }
 
     @Override
