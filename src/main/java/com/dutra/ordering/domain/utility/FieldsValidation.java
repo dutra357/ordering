@@ -24,4 +24,12 @@ public class FieldsValidation {
             throw new IllegalArgumentException(ErrorMessages.VALIDATION_ERROR_EMAIL_IS_INVALID);
         }
     }
+
+    public static void requiresNotBlankOrNull(String value) {
+        Objects.requireNonNull(value);
+
+        if (value.isBlank()) {
+            throw new IllegalArgumentException("Cannot be blank.");
+        }
+    }
 }
