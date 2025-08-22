@@ -1,4 +1,4 @@
-package com.dutra.ordering.domain.valueobjects;
+package com.dutra.ordering.domain.valueobjects.id;
 
 import com.dutra.ordering.domain.utility.IdGenerator;
 

@@ -14,7 +14,6 @@ public record LoyaltyPoints(Integer points) implements Comparable<LoyaltyPoints>
         if (points < 0) {
             throw new IllegalArgumentException("Negative number informed for points is invalid.");
         }
-
     }
 
     public LoyaltyPoints add(Integer points) {
