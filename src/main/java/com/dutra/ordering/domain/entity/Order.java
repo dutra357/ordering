@@ -2,6 +2,8 @@ package com.dutra.ordering.domain.entity;
 
 import com.dutra.ordering.domain.entity.enums.OrderStatus;
 import com.dutra.ordering.domain.entity.enums.PaymentMethods;
+import com.dutra.ordering.domain.exceptions.OrderCannotBePlacedException;
+import com.dutra.ordering.domain.exceptions.OrderInvalidShippingDeliveryDateException;
 import com.dutra.ordering.domain.exceptions.OrderStatusCannotBeChangedException;
 import com.dutra.ordering.domain.valueobjects.*;
 import com.dutra.ordering.domain.valueobjects.id.CustomerId;
@@ -108,10 +110,50 @@ public class Order {
     }
 
     public void place() {
+        Objects.requireNonNull(this.shipping());
+        Objects.requireNonNull(this.billing());
+        Objects.requireNonNull(this.expectedDeliveryDate());
+        Objects.requireNonNull(this.shippingCost());
+        Objects.requireNonNull(this.paymentMethod());
+        Objects.requireNonNull(this.items());
 
-        //TODO Business rules!
+        if (this.items().isEmpty()) {
+            throw new OrderCannotBePlacedException(this.id());
+        }
 
+        this.setPlacedAt(OffsetDateTime.now());
         this.changeStatus(OrderStatus.PLACED);
+    }
+
+    public void markAsPaid() {
+        this.setPaidAt(OffsetDateTime.now());
+        this.changeStatus(OrderStatus.PAID);
+    }
+
+    public void changePaymentMethod(PaymentMethods paymentMethod) {
+        Objects.requireNonNull(paymentMethod);
+        this.setPaymentMethod(paymentMethod);
+    }
+
+    public void changeBillingInfo(BillingInfo billingInfo) {
+        Objects.requireNonNull(billingInfo);
+        this.setBilling(billingInfo);
+    }
+
+    public void changeShipping(ShippingInfo shippingInfo,
+                               Money shippingCost, LocalDate expectedDeliveryDate) {
+        Objects.requireNonNull(shippingInfo);
+        Objects.requireNonNull(shippingCost);
+        Objects.requireNonNull(expectedDeliveryDate);
+
+        if (expectedDeliveryDate.isBefore(LocalDate.now())) {
+            throw new OrderInvalidShippingDeliveryDateException(this.id);
+        }
+
+        this.setShipping(shippingInfo);
+        this.setShippingCost(shippingCost);
+        this.setExpectedDeliveryDate(expectedDeliveryDate);
+
     }
 
     public boolean isDraft() {
@@ -120,6 +162,10 @@ public class Order {
 
     public boolean isPlaced() {
         return OrderStatus.PLACED.equals(this.orderStatus);
+    }
+
+    public boolean isPaid() {
+        return OrderStatus.PAID.equals(this.orderStatus);
     }
 
     // Métodos Auxiliares
